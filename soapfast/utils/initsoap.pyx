@@ -258,14 +258,17 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
                                 * sc.hyp1f1(0.5*(3.0+l+n), 1.5+l, 0.5*length[:,:,:]**2/sigmafact)
         radint[:,:,:,:,n] *= normfact
 
-    for iat in xrange(nat):
-        for ispe in xrange(nspecies):
-            for neigh in xrange(nneigh[iat,ispe]):
-                for l in xrange(lmax+1):
-                    orthoradint[iat,ispe,l,:,neigh] = np.dot(orthomatrix,radint[iat,ispe,neigh,l])
+#    for iat in xrange(nat):
+#        for ispe in xrange(nspecies):
+#            for neigh in xrange(nneigh[iat,ispe]):
+#                for l in xrange(lmax+1):
+#                    orthoradint[iat,ispe,l,:,neigh] = np.dot(orthomatrix,radint[iat,ispe,neigh,l])
+    
+    orthoradint = np.einsum('ij,abcdj->abdic',orthomatrix,radint)
 
     for iat in xrange(nat):
         for ispe in xrange(nspecies):
             omega[iat,ispe] = np.einsum('lnh,lmh->nlm',orthoradint[iat,ispe],harmonic[iat,ispe])
+
 
     return [omega,harmonic,orthoradint]
