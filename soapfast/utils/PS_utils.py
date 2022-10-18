@@ -32,7 +32,7 @@ def setup_orthomatrix(nmax,rc):
 
 ##################################################################################################################
 
-def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,nmax,llmax,lvalues,centers,atom_indexes,all_species,coords,cell,rc,cw,sigma,sg,orthomatrix,sparse_options,all_radial,ncen,useall,verbose):
+def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,nmax,llmax,lvalues,centers,atom_indexes,all_species,coords,cell,rc,cw,sigma,sg,orthomatrix,sparse_options,all_radial,ncen,useall,verbose,dummy):
 
 
     # Get number of features
@@ -91,7 +91,7 @@ def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,
         for i in range(npoints):
 
             # compute the first kind of orthogonal projections from the SOAP density 
-            [omega1,harmonic1,orthoradint1] = initsoap.initsoap(nat[i],nnmax,nspecies,lmax,centers,all_species,nneighmax[i],atom_indexes[i],rc,coords[i],cell[i].T,all_radial,sigma,sg,nmax,orthomatrix)
+            [omega1,harmonic1,orthoradint1] = initsoap.initsoap(nat[i],nnmax,nspecies,lmax,centers,all_species,nneighmax[i],atom_indexes[i],rc,coords[i],cell[i].T,all_radial,sigma,sg,nmax,orthomatrix,dummy)
 
 
             omega2 = omega1.copy()
@@ -156,7 +156,7 @@ def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,
         for i in range(npoints):
 
             # compute the first kind of orthogonal projections from the SOAP density 
-            [omega1,harmonic1,orthoradint1] = initsoap.initsoap(nat[i],nnmax,nspecies,lmax,centers,all_species,nneighmax[i],atom_indexes[i],rc,coords[i],cell[i].T,all_radial,sigma,sg,nmax,orthomatrix)
+            [omega1,harmonic1,orthoradint1] = initsoap.initsoap(nat[i],nnmax,nspecies,lmax,centers,all_species,nneighmax[i],atom_indexes[i],rc,coords[i],cell[i].T,all_radial,sigma,sg,nmax,orthomatrix,dummy)
 
 
             omega2 = omega1.copy()

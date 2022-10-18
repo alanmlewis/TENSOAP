@@ -47,7 +47,8 @@ cdef void _initsoapmolecule(long nspecies,
                            complex[:,:,:,:,:] harmonic,
                            double radial_c,
                            double radial_r0,
-                           double radial_m
+                           double radial_m,
+                           long dummy
                     ):
 
     # Py_ssize_t is the correct C type for Python array indexes
@@ -68,12 +69,26 @@ cdef void _initsoapmolecule(long nspecies,
                 # loop over neighbours of that species
                 n = 0
                 for ineigh in xrange(nneighmax[spe]):
-                    neigh = atom_indexes[spe,ineigh]
-                    # compute distance vector
-                    rx = coords[neigh,0] - coords[cen,0] 
-                    ry = coords[neigh,1] - coords[cen,1] 
-                    rz = coords[neigh,2] - coords[cen,2]
-                    r2 = rx**2 + ry**2 + rz**2
+                    if spe == 0:
+                        rx = 0.0
+                        ry = 0.0
+                        rz = 0.0
+                        neigh = -1
+                        if dummy == 1:
+                            rx = -rcut*0.95
+                        elif dummy == 2:
+                            ry = -rcut*0.95
+                        elif dummy == 3:
+                            rz = -rcut*0.95
+                        else:
+                            exit("If provided, the dummy argument must take a value between 0 and 3, inclusive")
+                    else:
+                        neigh = atom_indexes[spe,ineigh]
+                        # compute distance vector
+                        rx = coords[neigh,0] - coords[cen,0] 
+                        ry = coords[neigh,1] - coords[cen,1] 
+                        rz = coords[neigh,2] - coords[cen,2]
+                        r2 = rx**2 + ry**2 + rz**2
                     # within cutoff ?
                     if r2 <= rcut**2:
                         # central atom ?
@@ -119,7 +134,8 @@ cdef void _initsoapperiodic(long nspecies,
                            complex[:,:,:,:,:] harmonic,
                            double radial_c,
                            double radial_r0,
-                           double radial_m
+                           double radial_m,
+                           long dummy
                     ):
 
     # Py_ssize_t is the correct C type for Python array indexes
@@ -141,11 +157,25 @@ cdef void _initsoapperiodic(long nspecies,
                 # loop over neighbours of that species
                 n = 0
                 for ineigh in xrange(nneighmax[spe]):
-                    neigh = atom_indexes[spe,ineigh]
-                    # compute distance vector
-                    rx = coords[neigh,0] - coords[cen,0] 
-                    ry = coords[neigh,1] - coords[cen,1] 
-                    rz = coords[neigh,2] - coords[cen,2]
+                    if spe == 0:
+                        rx = 0.0
+                        ry = 0.0
+                        rz = 0.0
+                        neigh = -1
+                        if dummy == 1:
+                            rx = -rcut*0.95
+                        elif dummy == 2:
+                            ry = -rcut*0.95
+                        elif dummy == 3:
+                            rz = -rcut*0.95
+                        else:
+                            exit("If provided, the dummy argument must take a value between 0 and 3, inclusive")
+                    else:
+                        neigh = atom_indexes[spe,ineigh]
+                        # compute distance vector
+                        rx = coords[neigh,0] - coords[cen,0] 
+                        ry = coords[neigh,1] - coords[cen,1] 
+                        rz = coords[neigh,2] - coords[cen,2]
                     # apply pbc 
                     sx = invcell[0,0]*rx + invcell[0,1]*ry + invcell[0,2]*rz
                     sy = invcell[1,0]*rx + invcell[1,1]*ry + invcell[1,2]*rz
@@ -192,7 +222,7 @@ cdef void _initsoapperiodic(long nspecies,
 
 #----------------------------------------------------------------------------------------------------------------------------------------
 
-def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,rcut,coords,cell,all_radial,sigma,sg,nmax,orthomatrix):
+def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,rcut,coords,cell,all_radial,sigma,sg,nmax,orthomatrix,dummy):
     """return initialization variables for SOAP"""
 
     alpha = 1.0 / (2.0 * sg**2)
@@ -207,7 +237,7 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
     orthoradint = np.zeros((nat,nspecies,lmax+1,nmax,nnmax),float)
 
     if (np.sum(cell) == 0.0):
-        _initsoapmolecule(nspecies,lmax,centers,all_species,nneighmax,atom_indexes,rcut,alpha,coords,nneigh,length,efact,harmonic,all_radial[0],all_radial[1],all_radial[2])
+        _initsoapmolecule(nspecies,lmax,centers,all_species,nneighmax,atom_indexes,rcut,alpha,coords,nneigh,length,efact,harmonic,all_radial[0],all_radial[1],all_radial[2],dummy)
     else:
         ncell = np.zeros(3,int)
         ncell[0] = int(np.round(rcut/np.linalg.norm(cell[:,0])))
@@ -215,8 +245,7 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
         ncell[2] = int(np.round(rcut/np.linalg.norm(cell[:,2])))
 
         invcell = np.linalg.inv(cell)
-        _initsoapperiodic(nspecies,ncell,lmax,centers,all_species,nneighmax,atom_indexes,rcut,alpha,coords,cell,invcell,nneigh,length,efact,harmonic,all_radial[0],all_radial[1],all_radial[2])
-
+        _initsoapperiodic(nspecies,ncell,lmax,centers,all_species,nneighmax,atom_indexes,rcut,alpha,coords,cell,invcell,nneigh,length,efact,harmonic,all_radial[0],all_radial[1],all_radial[2],dummy)
     for n in xrange(nmax):
         normfact = np.sqrt(2.0/(sc.gamma(1.5+n)*sigma[n]**(3.0+2.0*n)))
         sigmafact = (sg2**2+sg2*sigma[n]**2)/sigma[n]**2
