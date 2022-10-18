@@ -246,6 +246,11 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
 
         invcell = np.linalg.inv(cell)
         _initsoapperiodic(nspecies,ncell,lmax,centers,all_species,nneighmax,atom_indexes,rcut,alpha,coords,cell,invcell,nneigh,length,efact,harmonic,all_radial[0],all_radial[1],all_radial[2],dummy)
+
+    pre = []
+    for l in xrange(lmax+1):
+        pre.append((length[:,:,:]/sg2)**l/sc.gamma(1.5+l))
+    
     for n in xrange(nmax):
         normfact = np.sqrt(2.0/(sc.gamma(1.5+n)*sigma[n]**(3.0+2.0*n)))
         sigmafact = (sg2**2+sg2*sigma[n]**2)/sigma[n]**2
@@ -253,9 +258,10 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
             radint[:,:,:,l,n] = efact[:,:,:] \
                                 * 2.0**(-0.5*(1.0+l-n)) \
                                 * (1.0/sg2 + 1.0/sigma[n]**2)**(-0.5*(3.0+l+n)) \
-                                * sc.gamma(0.5*(3.0+l+n))/sc.gamma(1.5+l) \
-                                * (length[:,:,:]/sg2)**l \
+                                * sc.gamma(0.5*(3.0+l+n)) \
+                                * pre[l] \
                                 * sc.hyp1f1(0.5*(3.0+l+n), 1.5+l, 0.5*length[:,:,:]**2/sigmafact)
+#                                * (length[:,:,:]/sg2)**l/sc.gamma(1.5+l) \
         radint[:,:,:,:,n] *= normfact
 
 #    for iat in xrange(nat):
@@ -266,9 +272,10 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
     
     orthoradint = np.einsum('ij,abcdj->abdic',orthomatrix,radint)
 
-    for iat in xrange(nat):
-        for ispe in xrange(nspecies):
-            omega[iat,ispe] = np.einsum('lnh,lmh->nlm',orthoradint[iat,ispe],harmonic[iat,ispe])
+#    for iat in xrange(nat):
+#        for ispe in xrange(nspecies):
+#            omega[iat,ispe] = np.einsum('lnh,lmh->nlm',orthoradint[iat,ispe],harmonic[iat,ispe])
+    omega = np.einsum('ijlnh,ijlmh->ijnlm',orthoradint,harmonic,optimize='optimal')
 
 
     return [omega,harmonic,orthoradint]
