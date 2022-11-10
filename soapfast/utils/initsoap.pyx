@@ -39,7 +39,7 @@ cdef void _initsoapmolecule(long nspecies,
                            long[:] nneighmax,
                            long[:,:] atom_indexes,
                            double rcut,
-                           double alpha,
+                           double[:] alpha,
                            double[:,:] coords,
                            long[:,:] nneigh,
                            double[:,:,:] length,
@@ -103,7 +103,7 @@ cdef void _initsoapmolecule(long nspecies,
                             length[iat,ispe,n]  = rdist
                             th = np.arccos(rz/rdist)
                             ph = np.arctan2(ry,rx)
-                            efact[iat,ispe,n] = np.exp(-alpha*r2) * _radialscaling(rdist,radial_c,radial_r0,radial_m)
+                            efact[iat,ispe,n] = np.exp(-alpha[ispe]*r2) * _radialscaling(rdist,radial_c,radial_r0,radial_m)
                             for lval in xrange(lmax+1):
                                 for im in xrange(2*lval+1):
                                     mval = im-lval
@@ -124,7 +124,7 @@ cdef void _initsoapperiodic(long nspecies,
                            long[:] nneighmax,
                            long[:,:] atom_indexes,
                            double rcut,
-                           double alpha,
+                           double[:] alpha,
                            double[:,:] coords,
                            double[:,:] cell,
                            double[:,:] invcell,
@@ -211,7 +211,7 @@ cdef void _initsoapperiodic(long nspecies,
                                         length[iat,ispe,n]  = rdist
                                         th = np.arccos(rrz/rdist)
                                         ph = np.arctan2(rry,rrx)
-                                        efact[iat,ispe,n] = np.exp(-alpha*r2) * _radialscaling(rdist,radial_c,radial_r0,radial_m)
+                                        efact[iat,ispe,n] = np.exp(-alpha[ispe]*r2) * _radialscaling(rdist,radial_c,radial_r0,radial_m)
                                         for lval in xrange(lmax+1):
                                             for im in xrange(2*lval+1):
                                                 mval = im-lval
@@ -222,8 +222,12 @@ cdef void _initsoapperiodic(long nspecies,
 
 #----------------------------------------------------------------------------------------------------------------------------------------
 
-def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,rcut,coords,cell,all_radial,sigma,sg,nmax,orthomatrix,dummy):
+def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,rcut,coords,cell,all_radial,sigma,sg_in,nmax,orthomatrix,dummy):
     """return initialization variables for SOAP"""
+
+    sg = np.zeros(nspecies)
+    sg += sg_in
+    if dummy: sg[-1] = 0.2
 
     alpha = 1.0 / (2.0 * sg**2)
     sg2 = sg**2
@@ -249,21 +253,21 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
 
     pre = []
     for l in xrange(lmax+1):
-        pre.append((length[:,:,:]/sg2)**l/sc.gamma(1.5+l))
-    
+        pre.append((length[:,:,:]/sg2[None,:,None])**l/sc.gamma(1.5+l))
+   
     for n in xrange(nmax):
         normfact = np.sqrt(2.0/(sc.gamma(1.5+n)*sigma[n]**(3.0+2.0*n)))
         sigmafact = (sg2**2+sg2*sigma[n]**2)/sigma[n]**2
         for l in xrange(lmax+1):
             radint[:,:,:,l,n] = efact[:,:,:] \
                                 * 2.0**(-0.5*(1.0+l-n)) \
-                                * (1.0/sg2 + 1.0/sigma[n]**2)**(-0.5*(3.0+l+n)) \
+                                * (1.0/sg2[None,:,None] + 1.0/sigma[n]**2)**(-0.5*(3.0+l+n)) \
                                 * sc.gamma(0.5*(3.0+l+n)) \
                                 * pre[l] \
-                                * sc.hyp1f1(0.5*(3.0+l+n), 1.5+l, 0.5*length[:,:,:]**2/sigmafact)
+                                * sc.hyp1f1(0.5*(3.0+l+n), 1.5+l, 0.5*length[:,:,:]**2/sigmafact[None,:,None])
 #                                * (length[:,:,:]/sg2)**l/sc.gamma(1.5+l) \
         radint[:,:,:,:,n] *= normfact
-
+        l -= 1
 #    for iat in xrange(nat):
 #        for ispe in xrange(nspecies):
 #            for neigh in xrange(nneigh[iat,ispe]):

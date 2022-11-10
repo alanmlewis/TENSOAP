@@ -102,6 +102,7 @@ def get_power_spectrum(lam,frames,nmax=8,lmax=6,rc=4.0,sg=0.3,ncut=-1,cw=1.0,per
     ncen = np.zeros(npoints,dtype=int)
     for i in range(npoints):
         ncen[i] = sum([[atomic_numbers[j] for j in all_names[i]].count(cens) for cens in centers])
+#    natmax = np.max(ncen)
 
     # Get list of species
     if (spec != []):
@@ -144,9 +145,9 @@ def get_power_spectrum(lam,frames,nmax=8,lmax=6,rc=4.0,sg=0.3,ncut=-1,cw=1.0,per
     import os
     pname = os.path.dirname(os.path.realpath(__file__))
     if os.path.isfile(pname + "/utils/LODE/gvectors.so"):
-        [power,featsize] = psutil.compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,nmax,llmax,lvalues,centers,all_indexes,all_species,coords,cell,rc,cw,sigma,sg,orthomatrix,sparse_options,all_radial,ncen,useall,verbose,dummy,electro,fixcell,sigewald,single_radial,radsize,lebsize,average)
+        [power,featsize] = psutil.compute_power_spectrum(ncen,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,nmax,llmax,lvalues,centers,all_indexes,all_species,coords,cell,rc,cw,sigma,sg,orthomatrix,sparse_options,all_radial,ncen,useall,verbose,dummy,electro,fixcell,sigewald,single_radial,radsize,lebsize,average)
     else:
-        [power,featsize] = psutil.compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,nmax,llmax,lvalues,centers,all_indexes,all_species,coords,cell,rc,cw,sigma,sg,orthomatrix,sparse_options,all_radial,ncen,useall,verbose,dummy)
+        [power,featsize] = psutil.compute_power_spectrum(ncen,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,nmax,llmax,lvalues,centers,all_indexes,all_species,coords,cell,rc,cw,sigma,sg,orthomatrix,sparse_options,all_radial,ncen,useall,verbose,dummy)
     if (verbose):
         print("Power spectrum computed", time.time()-start) 
     
