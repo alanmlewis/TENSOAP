@@ -82,6 +82,7 @@ cdef void _initsoapmolecule(long nspecies,
                             rz = -rcut*0.95
                         else:
                             exit("If provided, the dummy argument must take a value between 0 and 3, inclusive")
+                        r2 = rx**2 + ry**2 + rz**2
                     else:
                         neigh = atom_indexes[spe,ineigh]
                         # compute distance vector
@@ -163,13 +164,24 @@ cdef void _initsoapperiodic(long nspecies,
                         rz = 0.0
                         neigh = -1
                         if dummy == 1:
-                            rx = -rcut*0.95
+                            rx = -rcut*1.5
                         elif dummy == 2:
-                            ry = -rcut*0.95
+                            ry = -rcut*1.5
                         elif dummy == 3:
-                            rz = -rcut*0.95
+                            rz = -rcut*1.5
                         else:
                             exit("If provided, the dummy argument must take a value between 0 and 3, inclusive")
+                        rdist = np.sqrt(r2)
+                        length[iat,ispe,n]  = rdist
+                        th = np.arccos(rrz/rdist)
+                        ph = np.arctan2(rry,rrx)
+                        efact[iat,ispe,n] = np.exp(-alpha[ispe]*r2) * _radialscaling(rdist,radial_c,radial_r0,radial_m)
+                        for lval in xrange(lmax+1):
+                             for im in xrange(2*lval+1):
+                                  mval = im-lval
+                                  harmonic[iat,ispe,lval,im,n] = np.conj(sc.sph_harm(mval,lval,ph,th)) 
+                        nneigh[iat,ispe] = nneigh[iat,ispe] + 1
+                        n = n + 1
                     else:
                         neigh = atom_indexes[spe,ineigh]
                         # compute distance vector
@@ -177,47 +189,47 @@ cdef void _initsoapperiodic(long nspecies,
                         ry = coords[neigh,1] - coords[cen,1] 
                         rz = coords[neigh,2] - coords[cen,2]
                     # apply pbc 
-                    sx = invcell[0,0]*rx + invcell[0,1]*ry + invcell[0,2]*rz
-                    sy = invcell[1,0]*rx + invcell[1,1]*ry + invcell[1,2]*rz
-                    sz = invcell[2,0]*rx + invcell[2,1]*ry + invcell[2,2]*rz
-                    sx = sx - np.round(sx)
-                    sy = sy - np.round(sy)
-                    sz = sz - np.round(sz)
-                    rcx = cell[0,0]*sx + cell[0,1]*sy + cell[0,2]*sz
-                    rcy = cell[1,0]*sx + cell[1,1]*sy + cell[1,2]*sz
-                    rcz = cell[2,0]*sx + cell[2,1]*sy + cell[2,2]*sz
-                    # replicate cell
-                    for ia in xrange(-ncell[0],ncell[0]+1):
-                        for ib in xrange(-ncell[1],ncell[1]+1):
-                            for ic in xrange(-ncell[2],ncell[2]+1):
-                                rrx = rcx + ia*cell[0,0] + ib*cell[0,1] + ic*cell[0,2]
-                                rry = rcy + ia*cell[1,0] + ib*cell[1,1] + ic*cell[1,2]
-                                rrz = rcz + ia*cell[2,0] + ib*cell[2,1] + ic*cell[2,2]
-                                r2 = rrx**2 + rry**2 + rrz**2
-                                # within cutoff ?
-                                if r2 <= rcut**2:
-                                    if n > nnmax:
-                                        print "The number of nearest neighbours exceeds the estimated maximum. Please reduce the value of the flag vol_frac when calling get_power_spectrum."
-                                        sys.exit()
-                                    # central atom ?
-                                    if neigh == cen and ia==0 and ib==0 and ic==0:
-                                        length[iat,ispe,n]  = 0.0
-                                        efact[iat,ispe,n]   = 1.0 
-                                        harmonic[iat,ispe,0,0,n] = sc.sph_harm(0,0,0,0)
-                                        nneigh[iat,ispe] = nneigh[iat,ispe] + 1
-                                        n = n + 1
-                                    else:
-                                        rdist = np.sqrt(r2)
-                                        length[iat,ispe,n]  = rdist
-                                        th = np.arccos(rrz/rdist)
-                                        ph = np.arctan2(rry,rrx)
-                                        efact[iat,ispe,n] = np.exp(-alpha[ispe]*r2) * _radialscaling(rdist,radial_c,radial_r0,radial_m)
-                                        for lval in xrange(lmax+1):
-                                            for im in xrange(2*lval+1):
-                                                mval = im-lval
-                                                harmonic[iat,ispe,lval,im,n] = np.conj(sc.sph_harm(mval,lval,ph,th)) 
-                                        nneigh[iat,ispe] = nneigh[iat,ispe] + 1
-                                        n = n + 1
+                        sx = invcell[0,0]*rx + invcell[0,1]*ry + invcell[0,2]*rz
+                        sy = invcell[1,0]*rx + invcell[1,1]*ry + invcell[1,2]*rz
+                        sz = invcell[2,0]*rx + invcell[2,1]*ry + invcell[2,2]*rz
+                        sx = sx - np.round(sx)
+                        sy = sy - np.round(sy)
+                        sz = sz - np.round(sz)
+                        rcx = cell[0,0]*sx + cell[0,1]*sy + cell[0,2]*sz
+                        rcy = cell[1,0]*sx + cell[1,1]*sy + cell[1,2]*sz
+                        rcz = cell[2,0]*sx + cell[2,1]*sy + cell[2,2]*sz
+                        # replicate cell
+                        for ia in xrange(-ncell[0],ncell[0]+1):
+                            for ib in xrange(-ncell[1],ncell[1]+1):
+                                for ic in xrange(-ncell[2],ncell[2]+1):
+                                    rrx = rcx + ia*cell[0,0] + ib*cell[0,1] + ic*cell[0,2]
+                                    rry = rcy + ia*cell[1,0] + ib*cell[1,1] + ic*cell[1,2]
+                                    rrz = rcz + ia*cell[2,0] + ib*cell[2,1] + ic*cell[2,2]
+                                    r2 = rrx**2 + rry**2 + rrz**2
+                                    # within cutoff ?
+                                    if r2 <= rcut**2:
+                                        if n > nnmax:
+                                            print "The number of nearest neighbours exceeds the estimated maximum. Please reduce the value of the flag vol_frac when calling get_power_spectrum."
+                                            sys.exit()
+                                        # central atom ?
+                                        if neigh == cen and ia==0 and ib==0 and ic==0:
+                                            length[iat,ispe,n]  = 0.0
+                                            efact[iat,ispe,n]   = 1.0 
+                                            harmonic[iat,ispe,0,0,n] = sc.sph_harm(0,0,0,0)
+                                            nneigh[iat,ispe] = nneigh[iat,ispe] + 1
+                                            n = n + 1
+                                        else:
+                                            rdist = np.sqrt(r2)
+                                            length[iat,ispe,n]  = rdist
+                                            th = np.arccos(rrz/rdist)
+                                            ph = np.arctan2(rry,rrx)
+                                            efact[iat,ispe,n] = np.exp(-alpha[ispe]*r2) * _radialscaling(rdist,radial_c,radial_r0,radial_m)
+                                            for lval in xrange(lmax+1):
+                                                for im in xrange(2*lval+1):
+                                                    mval = im-lval
+                                                    harmonic[iat,ispe,lval,im,n] = np.conj(sc.sph_harm(mval,lval,ph,th)) 
+                                            nneigh[iat,ispe] = nneigh[iat,ispe] + 1
+                                            n = n + 1
             iat = iat + 1
 
 #----------------------------------------------------------------------------------------------------------------------------------------
@@ -227,7 +239,7 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
 
     sg = np.zeros(nspecies)
     sg += sg_in
-    if dummy: sg[-1] = 0.2
+    if dummy: sg[-1] = 0.3
 
     alpha = 1.0 / (2.0 * sg**2)
     sg2 = sg**2
