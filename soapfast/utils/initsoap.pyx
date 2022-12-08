@@ -171,10 +171,11 @@ cdef void _initsoapperiodic(long nspecies,
                             rz = -rcut*1.5
                         else:
                             exit("If provided, the dummy argument must take a value between 0 and 3, inclusive")
+                        r2 = rx**2 + ry**2 + rz**2
                         rdist = np.sqrt(r2)
                         length[iat,ispe,n]  = rdist
-                        th = np.arccos(rrz/rdist)
-                        ph = np.arctan2(rry,rrx)
+                        th = np.arccos(rz/rdist)
+                        ph = np.arctan2(ry,rx)
                         efact[iat,ispe,n] = np.exp(-alpha[ispe]*r2) * _radialscaling(rdist,radial_c,radial_r0,radial_m)
                         for lval in xrange(lmax+1):
                              for im in xrange(2*lval+1):
@@ -279,7 +280,7 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
                                 * sc.hyp1f1(0.5*(3.0+l+n), 1.5+l, 0.5*length[:,:,:]**2/sigmafact[None,:,None])
 #                                * (length[:,:,:]/sg2)**l/sc.gamma(1.5+l) \
         radint[:,:,:,:,n] *= normfact
-        l -= 1
+#        l -= 1
 #    for iat in xrange(nat):
 #        for ispe in xrange(nspecies):
 #            for neigh in xrange(nneigh[iat,ispe]):
