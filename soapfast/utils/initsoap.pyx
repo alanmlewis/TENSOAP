@@ -164,11 +164,11 @@ cdef void _initsoapperiodic(long nspecies,
                         rz = 0.0
                         neigh = -1
                         if dummy == 1:
-                            rx = -rcut*1.5
+                            rx = -rcut*0.3
                         elif dummy == 2:
-                            ry = -rcut*1.5
+                            ry = -rcut*0.3
                         elif dummy == 3:
-                            rz = -rcut*1.5
+                            rz = -rcut*0.3
                         else:
                             exit("If provided, the dummy argument must take a value between 0 and 3, inclusive")
                         r2 = rx**2 + ry**2 + rz**2
@@ -240,7 +240,7 @@ def initsoap(nat,nnmax,nspecies,lmax,centers,all_species,nneighmax,atom_indexes,
 
     sg = np.zeros(nspecies)
     sg += sg_in
-    if dummy: sg[-1] = 0.3
+    if dummy: sg[-1] = 1.0
 
     alpha = 1.0 / (2.0 * sg**2)
     sg2 = sg**2

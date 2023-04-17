@@ -15,7 +15,7 @@ def main():
     # Parse input arguments
     args = parsing.add_command_line_arguments_learn("SA-GPR")
     [reg,fractrain,tens,kernels,sel,rdm,rank,nat,peratom,prediction,weights,sparsify,mode,threshold,jitter] = parsing.set_variable_values_learn(args)
-    
+
     if (args.spherical == False):
     
         # Do full Cartesian regression, without environmental sparsification
@@ -211,7 +211,7 @@ def main():
                             corrfile.close()
                         else:
                             corrfile = open("prediction_L" + str_rank + ".txt","w")
-                            for j in range(len(pred)):
+                            for j in range(len(pred[i])):
                                 print(pte[i][j],"  ",pred[i][j], file=corrfile)
                             corrfile.close()
                         # Accumulate errors
