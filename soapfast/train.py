@@ -15,6 +15,7 @@ def main():
     # Parse input arguments
     args = parsing.add_command_line_arguments_learn("SA-GPR")
     [reg,fractrain,tens,kernels,sel,rdm,rank,nat,peratom,prediction,weights,sparsify,mode,threshold,jitter] = parsing.set_variable_values_learn(args)
+    ndata = len(tens)
     
     if (args.spherical == False):
     
@@ -33,9 +34,6 @@ def main():
     
             # Get spherical components
             [spherical_tensor,degen,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list] = sagpr_utils.get_spherical_tensor_components(tens,rank,threshold)
-#            if prediction:
-#                for i in range(len(degen)):
-#                    ptr.append(np.reshape(np.array([spherical_tensor[i][degen[i]*j:degen[i]*(j+1)] for j in training_set]).astype(float),len(training_set)*degen[i]))
             for l in range(len(degen)):
                 if (degen[l] != 1): 
                     spherical_tensor[l] = np.split(spherical_tensor[l],len(spherical_tensor[l])/degen[l])
@@ -105,19 +103,7 @@ def main():
 
             # If we have chosen to do prediction, we have to split the kernels at this point into training and testing kernels
             if (prediction):
-                if (len(sel)==1):
-                    training_set = np.load(sel[0])
-                elif (len(sel)==2):
-                    training_set = list(range(sel[0],sel[1]))
-                elif (rdm!=0):
-                    training_set = list(range(nN))
-                    random.shuffle(training_set)
-                    training_set = training_set[:rdm]
-                else:
-                    print("ERROR: you have asked for prediction but have not specified a training set!")
-                    sys.exit(0)
-                # Now split the kernels
-                test_set = np.setdiff1d(list(range(nN)),training_set)
+                ns, ntr, ntrmax, training_set,test_set = regression_utils.shuffle_data(ndata,sel,rdm,fractrain)
                 ktr = []
                 kte = []
                 for k in range(int(len(sparsify)/2)):
@@ -245,12 +231,6 @@ def main():
                         training = ptr[i].reshape(len(training_set),degen[i])
                         intrins_dev = np.std(training,axis=0)
                         abs_error = np.sqrt(np.average(np.square(comparison-prediction),axis=0))
-#                        for j in range(len(training)):
-#                            intrins_dev += np.linalg.norm(training[j])**2
-#                        for j in range(len(comparison)):
-#                            abs_error += np.linalg.norm(comparison[j]-prediction[j])**2
-#                       intrins_dev /= len(training)
-#                       abs_error /= len(comparison)
 
                     # Print out errors
                     print("")
@@ -335,19 +315,7 @@ def main():
 
             # If we have chosen to do prediction, we have to split the kernel at this point into training and testing kernels
             if (prediction):
-                if (len(sel)==1):
-                    training_set = np.load(sel[0])
-                elif (len(sel)==2):
-                    training_set = list(range(sel[0],sel[1]))
-                elif (rdm!=0):
-                    training_set = list(range(nN))
-                    random.shuffle(training_set)
-                    training_set = training_set[:rdm]
-                else:
-                    print("ERROR: you have asked for prediction but have not specified a training set!")
-                    sys.exit(0)
-                # Now do the splitting of the kernel
-                test_set = np.setdiff1d(list(range(nN)),training_set)
+                ns, ntr, ntrmax, training_set,test_set = regression_utils.shuffle_data(ndata,sel,rdm,fractrain)
                 ktr = np.array([[kernel[0][i,j] for j in range(len(kernel[0][0]))] for i in training_set]).astype(float)
                 kte = np.array([[kernel[0][i,j] for j in range(len(kernel[0][0]))] for i in test_set]).astype(float)
                 kernel[0] = ktr
@@ -440,12 +408,6 @@ def main():
                     abs_error = 0.0
                     intrins_dev = np.std(ptr,axis=0)
                     abs_error = np.sqrt(np.average(np.square(pred-pte),axis=0))
-#                   for i in range(len(ptr)):
-#                       intrins_dev += np.linalg.norm(ptr[i])**2
-#                   for i in range(len(pte)):
-#                       abs_error += np.linalg.norm(pred[i]-pte[i])**2
-#                   intrins_dev /= len(ptr)
-#                   abs_error /= len(pte)
 
                 # Print out errors
                 print("")
