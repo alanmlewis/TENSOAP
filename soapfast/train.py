@@ -33,21 +33,26 @@ def main():
     
             # Get spherical components
             [spherical_tensor,degen,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list] = sagpr_utils.get_spherical_tensor_components(tens,rank,threshold)
+#            if prediction:
+#                for i in range(len(degen)):
+#                    ptr.append(np.reshape(np.array([spherical_tensor[i][degen[i]*j:degen[i]*(j+1)] for j in training_set]).astype(float),len(training_set)*degen[i]))
             for l in range(len(degen)):
                 if (degen[l] != 1): 
                     spherical_tensor[l] = np.split(spherical_tensor[l],len(spherical_tensor[l])/degen[l])
 
             outvec = []
             tstvec = []
+            ptr = []
             for l in range(len(degen)):
                 # Do regression for each spherical tensor component
                 lval = keep_list[l][-1]
                 str_rank = ''.join(map(str,keep_list[l][1:]))
                 if (str_rank == ''):
                     str_rank = ''.join(map(str,keep_list[l]))
-                [ov, tv, na] = sagpr_utils.do_sagpr_spherical(kernel[l],spherical_tensor[l],reg[l],rank_str=str_rank,nat=nat,fractrain=fractrain,rdm=rdm,sel=sel,peratom=peratom,prediction=prediction,get_meantrain=True,mode=mode,wfile=weights,fnames=[args.features,kernels[l]],jitter=jitter[l])
+                [ov, tv, trv, na] = sagpr_utils.do_sagpr_spherical(kernel[l],spherical_tensor[l],reg[l],rank_str=str_rank,nat=nat,fractrain=fractrain,rdm=rdm,sel=sel,peratom=peratom,prediction=prediction,get_meantrain=True,mode=mode,wfile=weights,fnames=[args.features,kernels[l]],jitter=jitter[l])
                 outvec.append(ov)
                 tstvec.append(tv)
+                ptr.append(trv)
             nattest = na
     
             # If we wanted to do the predictions, then put together the predicted spherical tensors
@@ -215,7 +220,7 @@ def main():
                                 print(pte[i][j],"  ",pred[i][j], file=corrfile)
                             corrfile.close()
                         # Accumulate errors
-                        intrins_dev = np.std(ptr[i])**2
+                        intrins_dev = np.std(ptr[i])#**2
                         abs_error = 0.0
                         for j in range(len(pte[i])):
                             abs_error += (pte[i][j] - pred[i][j])**2
@@ -238,12 +243,14 @@ def main():
                         intrins_dev=0.0
                         abs_error=0.0
                         training = ptr[i].reshape(len(training_set),degen[i])
-                        for j in range(len(training)):
-                            intrins_dev += np.linalg.norm(training[j])**2
-                        for j in range(len(comparison)):
-                            abs_error += np.linalg.norm(comparison[j]-prediction[j])**2
-                        intrins_dev /= len(training)
-                        abs_error /= len(comparison)
+                        intrins_dev = np.std(training,axis=0)
+                        abs_error = np.sqrt(np.average(np.square(comparison-prediction),axis=0))
+#                        for j in range(len(training)):
+#                            intrins_dev += np.linalg.norm(training[j])**2
+#                        for j in range(len(comparison)):
+#                            abs_error += np.linalg.norm(comparison[j]-prediction[j])**2
+#                       intrins_dev /= len(training)
+#                       abs_error /= len(comparison)
 
                     # Print out errors
                     print("")
@@ -252,9 +259,9 @@ def main():
                     print("--------------------------------")
                     print("RESULTS FOR L=%s MODULI (lambda=%f)"%(str_rank,reg[i]))
                     print("-----------------------------------------------------")
-                    print("STD", np.sqrt(intrins_dev))
-                    print("ABS RMSE", np.sqrt(abs_error))
-                    print("RMSE = %.4f %%"%(100. * np.sqrt(np.abs(abs_error / intrins_dev))))
+                    print("STD per component", intrins_dev)
+                    print("ABS RMSE per component", abs_error)
+                    print("% RMSE per component =", (100. * np.abs(abs_error / intrins_dev)))
 
                 # Finally, get predictions for the entire cartesian tensor
                 ns = len(prediction)
@@ -272,6 +279,17 @@ def main():
                     for i in range(ns):
                         print(' '.join(str(e) for e in list(np.split(testcart,ns)[i])),"  ",' '.join(str(e) for e in list(np.split(predcart,ns)[i])), file=corrfile)
                     corrfile.close()
+
+
+        trcart = regression_utils.convert_spherical_to_cartesian(ptr ,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list).reshape((len(ptr[0]),-1))
+        intrins_dev = np.std(trcart,axis=0)
+        abs_error = np.sqrt(np.average(np.square(predcart-testcart).reshape((ns,-1)),axis=0))
+        print("--------------------------------")
+        print("RESULTS FOR CARTESIAN TENSOR")
+        print("-----------------------------------------------------")
+        print("STD per component", intrins_dev)
+        print("ABS RMSE per component", abs_error)
+        print("% RMSE per component =", (100. * np.abs(abs_error / intrins_dev)))
 
     else:
         # Do spherical regression, without environmental sparsification
@@ -420,12 +438,14 @@ def main():
                     intrins_dev = np.std(ptr)**2
                     intrins_dev = 0.0
                     abs_error = 0.0
-                    for i in range(len(ptr)):
-                        intrins_dev += np.linalg.norm(ptr[i])**2
-                    for i in range(len(pte)):
-                        abs_error += np.linalg.norm(pred[i]-pte[i])**2
-                    intrins_dev /= len(ptr)
-                    abs_error /= len(pte)
+                    intrins_dev = np.std(ptr,axis=0)
+                    abs_error = np.sqrt(np.average(np.square(pred-pte),axis=0))
+#                   for i in range(len(ptr)):
+#                       intrins_dev += np.linalg.norm(ptr[i])**2
+#                   for i in range(len(pte)):
+#                       abs_error += np.linalg.norm(pred[i]-pte[i])**2
+#                   intrins_dev /= len(ptr)
+#                   abs_error /= len(pte)
 
                 # Print out errors
                 print("")
@@ -434,9 +454,9 @@ def main():
                 print("--------------------------------")
                 print("RESULTS FOR L=%i MODULI (lambda=%f)"%(int_rank,reg))
                 print("-----------------------------------------------------")
-                print("STD", np.sqrt(intrins_dev))
-                print("ABS RMSE", np.sqrt(abs_error))
-                print("RMSE = %.4f %%"%(100. * np.sqrt(np.abs(abs_error / intrins_dev))))
+                print("STD per component", intrins_dev)
+                print("ABS RMSE per component", abs_error)
+                print("% RMSE per component =", (100. * np.abs(abs_error / intrins_dev)))
 
 if __name__=="__main__":
     main()

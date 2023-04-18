@@ -114,8 +114,8 @@ def do_sagpr_spherical(kernel,tens,reg,rank_str='',nat=[],fractrain=1.0,rdm=0,se
             outvec += meantrain
 
         # Accumulate errors
-        intrins_dev = np.std(vtest_part)**2
-        abs_error = np.sum((outvec-vtest_part)**2)/(degen*ns)
+        intrins_dev = np.std(vtest_part.reshape((-1,degen)),axis=0)
+        abs_error = np.sqrt(np.average(np.square(outvec-vtest_part).reshape((-1,degen)),axis=0))
 
         if peratom:
             corrfile = open("prediction_L" + rank_str + ".txt","w")
@@ -134,18 +134,18 @@ def do_sagpr_spherical(kernel,tens,reg,rank_str='',nat=[],fractrain=1.0,rdm=0,se
             print("--------------------------------")
             print("RESULTS FOR L=%i MODULI (lambda=%f)"%(lval,reg))
             print("-----------------------------------------------------")
-            print("STD", np.sqrt(intrins_dev))
-            print("ABS RMSE", np.sqrt(abs_error))
-            print("RMSE = %.4f %%"%(100. * np.sqrt(np.abs(abs_error / intrins_dev))))
+            print("STD per component", intrins_dev)
+            print("ABS RMSE per component", abs_error)
+            print("% RMSE per component =", (100. * np.abs(abs_error / intrins_dev)))
 
         if get_rmse:
             return np.sqrt(abs_error)
         else:
-            return [outvec,np.concatenate(vtest),nattest]
+            return [outvec,np.concatenate(vtest),np.concatenate(vtrain),nattest]
 
     else:
 
-        return [None,None,None]
+        return [None,None,None,None]
 
 ###############################################################################################################################
 
