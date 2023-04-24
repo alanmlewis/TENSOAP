@@ -59,18 +59,6 @@ def main():
                 predcart  = regression_utils.convert_spherical_to_cartesian(outvec,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list)
                 testcart  = regression_utils.convert_spherical_to_cartesian(tstvec,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list)
     
-                # Print out predictions
-                if peratom:
-                    corrfile = open("prediction_cartesian.txt","w")
-                    for i in range(ns):
-                        print(' '.join(str(e) for e in list(np.split(testcart,ns)[i]*nattest[i])),"  ", ' '.join(str(e) for e in list(np.split(predcart,ns)[i]*nattest[i])),"  ",str(nattest[i]), file=corrfile)
-                    corrfile.close()
-                else:
-                    corrfile = open("prediction_cartesian.txt","w")
-                    for i in range(ns):
-                        print(' '.join(str(e) for e in list(np.split(testcart,ns)[i])),"  ", ' '.join(str(e) for e in list(np.split(predcart,ns)[i])), file=corrfile)
-                    corrfile.close()
-    
         # Do full Cartesian regression, with environmental sparsification
         else:
         
@@ -104,6 +92,8 @@ def main():
             # If we have chosen to do prediction, we have to split the kernels at this point into training and testing kernels
             if (prediction):
                 ns, ntr, ntrmax, training_set,test_set = regression_utils.shuffle_data(ndata,sel,rdm,fractrain)
+                print("testing data points: ", len(test_set))
+                print("training data points: ", len(training_set))
                 ktr = []
                 kte = []
                 for k in range(int(len(sparsify)/2)):
@@ -193,83 +183,52 @@ def main():
                     pred.append(np.dot(kte[i],wts[4]))
                     if (degen[i]==1):
                         pred[-1] += meantrain[i]
-                        pte[i] = pte[i].reshape(len(pte[i]))
-                        # Print out predictions
-                        if peratom:
-                            corrfile = open("prediction_L" + str_rank + ".txt","w")
-                            for j in range(len(pred[i])):
-                                print(pte[i][j]*nattest[j],"  ",pred[i][j]*nattest[j],"  ",nattest[j], file=corrfile)
-                            corrfile.close()
-                        else:
-                            corrfile = open("prediction_L" + str_rank + ".txt","w")
-                            for j in range(len(pred)):
-                                print(pte[i][j],"  ",pred[i][j], file=corrfile)
-                            corrfile.close()
-                        # Accumulate errors
-                        intrins_dev = np.std(ptr[i])#**2
-                        abs_error = 0.0
-                        for j in range(len(pte[i])):
-                            abs_error += (pte[i][j] - pred[i][j])**2
-                        abs_error /= len(pte[i])
+                    
+                    predi = pred[i].reshape(len(test_set),degen[i])
+                    comparison = pte[i].reshape(len(test_set),degen[i])
+
+                    if peratom:
+                        corrfile = open("prediction_L" + str_rank + ".txt","w")
+                        for j in range(len(predi)):
+                            print(' '.join(str(e) for e in list(np.array(comparison[j])*nattest[j])),"  ",' '.join(str(e) for e in list(np.array(predi[j])*nattest[j])),"  ",nattest[j], file=corrfile)
+                        corrfile.close()
                     else:
-                        prediction = pred[i].reshape(len(test_set),degen[i])
-                        comparison = pte[i].reshape(len(test_set),degen[i])
-                        # Print out predictions
-                        if peratom:
-                            corrfile = open("prediction_L" + str_rank + ".txt","w")
-                            for j in range(len(prediction)):
-                                print(' '.join(str(e) for e in list(np.array(comparison[j])*nattest[j])),"  ",' '.join(str(e) for e in list(np.array(prediction[j])*nattest[j])),"  ",nattest[j], file=corrfile)
-                            corrfile.close()
-                        else:
-                            corrfile = open("prediction_L" + str_rank + ".txt","w")
-                            for j in range(len(prediction)):
-                                print(' '.join(str(e) for e in list(np.array(comparison[j]))),"  ",' '.join(str(e) for e in list(np.array(prediction[j]))), file=corrfile)
-                            corrfile.close()
-                        # Accumulate errors
-                        intrins_dev=0.0
-                        abs_error=0.0
-                        training = ptr[i].reshape(len(training_set),degen[i])
-                        intrins_dev = np.std(training,axis=0)
-                        abs_error = np.sqrt(np.average(np.square(comparison-prediction),axis=0))
+                        corrfile = open("prediction_L" + str_rank + ".txt","w")
+                        for j in range(len(predi)):
+                            print(' '.join(str(e) for e in list(np.array(comparison[j]))),"  ",' '.join(str(e) for e in list(np.array(predi[j]))), file=corrfile)
+                        corrfile.close()
+
+                    # Accumulate errors
+                    training = ptr[i].reshape(len(training_set),degen[i])
+                    intrins_dev = np.std(training,axis=0)
+                    abs_error = np.sqrt(np.average(np.square(comparison-predi),axis=0))
 
                     # Print out errors
-                    print("")
-                    print("testing data points: ", len(test_set))
-                    print("training data points: ", len(training_set))
-                    print("--------------------------------")
-                    print("RESULTS FOR L=%s MODULI (lambda=%f)"%(str_rank,reg[i]))
-                    print("-----------------------------------------------------")
-                    print("STD per component", intrins_dev)
-                    print("ABS RMSE per component", abs_error)
-                    print("% RMSE per component =", (100. * np.abs(abs_error / intrins_dev)))
+                    regression_utils.print_results(intrins_dev,abs_error,degen[i])
 
                 # Finally, get predictions for the entire cartesian tensor
-                ns = len(prediction)
                 predcart = regression_utils.convert_spherical_to_cartesian(pred,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list)
                 testcart = regression_utils.convert_spherical_to_cartesian(pte ,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list)
 
-                # Print out predictions
-                if peratom:
-                    corrfile = open("prediction_cartesian.txt","w")
-                    for i in range(ns):
-                        print(' '.join(str(e) for e in list(np.split(testcart,ns)[i]*nattest[i])),"  ",' '.join(str(e) for e in list(np.split(predcart,ns)[i]*nattest[i])),"  ",str(nattest[i]), file=corrfile)
-                    corrfile.close()
-                else:
-                    corrfile = open("prediction_cartesian.txt","w")
-                    for i in range(ns):
-                        print(' '.join(str(e) for e in list(np.split(testcart,ns)[i])),"  ",' '.join(str(e) for e in list(np.split(predcart,ns)[i])), file=corrfile)
-                    corrfile.close()
+        if (prediction):
+            # Print out predictions
+            if peratom:
+                corrfile = open("prediction_cartesian.txt","w")
+                for i in range(ns):
+                    print(' '.join(str(e) for e in list(np.split(testcart,ns)[i]*nattest[i])),"  ",' '.join(str(e) for e in list(np.split(predcart,ns)[i]*nattest[i])),"  ",str(nattest[i]), file=corrfile)
+                corrfile.close()
+            else:
+                corrfile = open("prediction_cartesian.txt","w")
+                for i in range(ns):
+                    print(' '.join(str(e) for e in list(np.split(testcart,ns)[i])),"  ",' '.join(str(e) for e in list(np.split(predcart,ns)[i])), file=corrfile)
+                corrfile.close()
 
 
-        trcart = regression_utils.convert_spherical_to_cartesian(ptr ,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list).reshape((len(ptr[0]),-1))
-        intrins_dev = np.std(trcart,axis=0)
-        abs_error = np.sqrt(np.average(np.square(predcart-testcart).reshape((ns,-1)),axis=0))
-        print("--------------------------------")
-        print("RESULTS FOR CARTESIAN TENSOR")
-        print("-----------------------------------------------------")
-        print("STD per component", intrins_dev)
-        print("ABS RMSE per component", abs_error)
-        print("% RMSE per component =", (100. * np.abs(abs_error / intrins_dev)))
+            trcart = regression_utils.convert_spherical_to_cartesian(ptr ,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list).reshape((len(ptr[0]),-1))
+            intrins_dev = np.std(trcart,axis=0)
+            abs_error = np.sqrt(np.average(np.square(predcart-testcart).reshape((ns,-1)),axis=0))
+         
+            regression_utils.print_results(intrins_dev,abs_error,len(intrins_dev),cart=True)
 
     else:
         # Do spherical regression, without environmental sparsification
@@ -410,15 +369,7 @@ def main():
                     abs_error = np.sqrt(np.average(np.square(pred-pte),axis=0))
 
                 # Print out errors
-                print("")
-                print("testing data points: ", len(test_set))
-                print("training data points: ", len(training_set))
-                print("--------------------------------")
-                print("RESULTS FOR L=%i MODULI (lambda=%f)"%(int_rank,reg))
-                print("-----------------------------------------------------")
-                print("STD per component", intrins_dev)
-                print("ABS RMSE per component", abs_error)
-                print("% RMSE per component =", (100. * np.abs(abs_error / intrins_dev)))
+                regression_utils.print_results(intrins_dev,abs_error,degen[i])
 
 if __name__=="__main__":
     main()

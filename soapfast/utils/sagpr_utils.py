@@ -65,6 +65,9 @@ def do_sagpr_spherical(kernel,tens,reg,rank_str='',nat=[],fractrain=1.0,rdm=0,se
     # Get a list of members of the training and testing sets
     ndata = len(tens)
     [ns,nt,ntmax,trrange,terange] = shuffle_data(ndata,sel,rdm,fractrain)
+    if prediction and verbose and degen==1:
+        print("testing data points: ", ns)
+        print("training data points: ", nt)
    
     # If we are doing sparsification, set the training range equal to the entire transformed training set
     if (reg_matr != []):
@@ -128,15 +131,7 @@ def do_sagpr_spherical(kernel,tens,reg,rank_str='',nat=[],fractrain=1.0,rdm=0,se
 
         # Print out errors
         if verbose:
-            print("")
-            print("testing data points: ", ns)
-            print("training data points: ", nt)
-            print("--------------------------------")
-            print("RESULTS FOR L=%i MODULI (lambda=%f)"%(lval,reg))
-            print("-----------------------------------------------------")
-            print("STD per component", intrins_dev)
-            print("ABS RMSE per component", abs_error)
-            print("% RMSE per component =", (100. * np.abs(abs_error / intrins_dev)))
+            print_results(intrins_dev,abs_error,degen)
 
         if get_rmse:
             return np.sqrt(abs_error)
