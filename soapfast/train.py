@@ -200,8 +200,7 @@ def main():
                         corrfile.close()
 
                     # Accumulate errors
-                    training = ptr[i].reshape(len(training_set),degen[i])
-                    intrins_dev = np.std(training,axis=0)
+                    intrins_dev = np.std(comparison,axis=0)
                     abs_error = np.sqrt(np.average(np.square(comparison-predi),axis=0))
 
                     # Print out errors
@@ -225,8 +224,7 @@ def main():
                 corrfile.close()
 
 
-            trcart = regression_utils.convert_spherical_to_cartesian(ptr ,degen,ntr,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list).reshape((len(ptr[0]),-1))
-            intrins_dev = np.std(trcart,axis=0)
+            intrins_dev = np.std(testcart.reshape((ns,-1)),axis=0)
             abs_error = np.sqrt(np.average(np.square(predcart-testcart).reshape((ns,-1)),axis=0))
          
             regression_utils.print_results(intrins_dev,abs_error,len(intrins_dev),cart=True)
@@ -348,7 +346,7 @@ def main():
                         for i in range(len(pred)):
                             print(pte[i],"  ",pred[i], file=corrfile)
                     # Accumulate errors
-                    intrins_dev = np.std(ptr)**2
+                    intrins_dev = np.std(pte)**2
                     abs_error = 0.0
                     for i in range(len(pte)):
                         abs_error += (pte[i] - pred[i])**2
@@ -363,10 +361,7 @@ def main():
                         corrfile = open("prediction_L" + str(int_rank) + ".txt","w")
                         for i in range(len(pred)):
                             print(' '.join(str(e) for e in list(np.array(pte[i]))),"  ",' '.join(str(e) for e in list(np.array(pred[i]))), file=corrfile)
-                    intrins_dev = np.std(ptr)**2
-                    intrins_dev = 0.0
-                    abs_error = 0.0
-                    intrins_dev = np.std(ptr,axis=0)
+                    intrins_dev = np.std(pte,axis=0)
                     abs_error = np.sqrt(np.average(np.square(pred-pte),axis=0))
 
                 # Print out errors
