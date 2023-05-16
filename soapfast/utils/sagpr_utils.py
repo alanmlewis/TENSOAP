@@ -56,15 +56,12 @@ def do_sagpr_spherical(kernel,tens,reg,rank_str='',nat=[],fractrain=1.0,rdm=0,se
     if (nat == []):
         nat = [1 for i in range(len(tens))]
 
-    if (sel == [0,-1]) or (sel == [0,0]):
-        sel = [0,len(tens)]
-
-    if (len(sel)==1):
-        sel = ['file',np.load(sel[0])]
-
     # Get a list of members of the training and testing sets
     ndata = len(tens)
     [ns,nt,ntmax,trrange,terange] = shuffle_data(ndata,sel,rdm,fractrain)
+    if prediction and verbose and degen==1:
+        print("testing data points: ", ns)
+        print("training data points: ", nt)
    
     # If we are doing sparsification, set the training range equal to the entire transformed training set
     if (reg_matr != []):
@@ -114,8 +111,8 @@ def do_sagpr_spherical(kernel,tens,reg,rank_str='',nat=[],fractrain=1.0,rdm=0,se
             outvec += meantrain
 
         # Accumulate errors
-        intrins_dev = np.std(vtest_part)**2
-        abs_error = np.sum((outvec-vtest_part)**2)/(degen*ns)
+        intrins_dev = np.std(vtest_part.reshape((-1,degen)),axis=0)
+        abs_error = np.sqrt(np.average(np.square(outvec-vtest_part).reshape((-1,degen)),axis=0))
 
         if peratom:
             corrfile = open("prediction_L" + rank_str + ".txt","w")
@@ -128,24 +125,16 @@ def do_sagpr_spherical(kernel,tens,reg,rank_str='',nat=[],fractrain=1.0,rdm=0,se
 
         # Print out errors
         if verbose:
-            print("")
-            print("testing data points: ", ns)
-            print("training data points: ", nt)
-            print("--------------------------------")
-            print("RESULTS FOR L=%i MODULI (lambda=%f)"%(lval,reg))
-            print("-----------------------------------------------------")
-            print("STD", np.sqrt(intrins_dev))
-            print("ABS RMSE", np.sqrt(abs_error))
-            print("RMSE = %.4f %%"%(100. * np.sqrt(np.abs(abs_error / intrins_dev))))
+            print_results(intrins_dev,abs_error,degen)
 
         if get_rmse:
             return np.sqrt(abs_error)
         else:
-            return [outvec,np.concatenate(vtest),nattest]
+            return [outvec,np.concatenate(vtest),np.concatenate(vtrain),nattest]
 
     else:
 
-        return [None,None,None]
+        return [None,None,None,None]
 
 ###############################################################################################################################
 

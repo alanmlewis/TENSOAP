@@ -7,9 +7,39 @@ import scipy.linalg
 from sympy.physics.quantum.cg import CG
 
 ###############################################################################################################################
+def print_results(intrins_dev,abs_error,degen,cart=False):
+    prmse = np.abs(abs_error / intrins_dev)
+    rank = int((degen-1)/2)
+    print("")
+    print("-"*44)
+    if cart:
+        print("RESULTS FOR CARTESIAN TENSOR")
+    else:
+        print("RESULTS FOR L={} MODULI".format(rank))
+    print("-"*44)
+    print('Component | {:>10} {:>10} {:>10}'.format('STD','ERR','%RMSE'))
+    print("-"*10+"|"+"-"*33)
+#    if degen == 1:
+#        print('{:9} | {:10.3} {:10.3} {:10.2%}'.format(0,intrins_dev,abs_error,prmse))
+#    else:
+    for l in range(degen):
+        if cart:
+            first = l+1
+        else:
+            first = l-rank
+        print('{:9} | {:10.3} {:10.3} {:10.2%}'.format(first,intrins_dev[l],abs_error[l],prmse[l]))
+
+
+###############################################################################################################################
 
 def shuffle_data(ndata,sel,rdm,fractrain):
     # Populate arrays for training and testing set
+
+    if (sel == [0,-1]) or (sel == [0,0]):
+        sel = [0,ndata]
+
+    if (len(sel)==1):
+        sel = ['file',np.load(sel[0])]
 
     if rdm == 0:
         if (sel[0] != 'file'):
