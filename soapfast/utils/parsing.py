@@ -178,6 +178,7 @@ def add_command_line_arguments_PS(parsetext):
     parser.add_argument("-im", "--imag",                      action='store_true',                      help="Get imaginary power spectrum for building SO(3) kernel")
     parser.add_argument("-nn", "--nonorm",                    action='store_true',                      help="Do not normalize power spectrum")
     parser.add_argument("-vf", "--vol_frac",       type=float, default=1.0,                              help="Specify the occupied fraction of the cell")
+    parser.add_argument("-d", "--dummy",       type=int,default=0,                              help="Add dummy atom at the boundary of each environment, at -x (1), -y (2), or -z (3)")
 
     args = parser.parse_args()
     return args
@@ -262,7 +263,7 @@ def set_variable_values_PS(args):
             sys.exit(0)
         xyz_slice = [args.slice[0],args.slice[1]]
 
-    return [nmax,lmax,rc,sg,cen,spec,cw,lam,periodic,ncut,sparsefile,frames,subset,sparse_options,outfile,args.initial,atomic,all_radial,not args.uselist,xyz_slice,args.imag,args.nonorm,args.vol_frac]
+    return [nmax,lmax,rc,sg,cen,spec,cw,lam,periodic,ncut,sparsefile,frames,subset,sparse_options,outfile,args.initial,atomic,all_radial,not args.uselist,xyz_slice,args.imag,args.nonorm,args.vol_frac,args.dummy]
 
 #########################################################################
 

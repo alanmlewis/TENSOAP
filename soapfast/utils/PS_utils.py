@@ -32,7 +32,7 @@ def setup_orthomatrix(nmax,rc):
 
 ##################################################################################################################
 
-def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,nmax,llmax,lvalues,centers,atom_indexes,all_species,coords,cell,rc,cw,sigma,sg,orthomatrix,sparse_options,all_radial,ncen,useall,verbose):
+def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,nmax,llmax,lvalues,centers,atom_indexes,all_species,coords,cell,rc,cw,sigma,sg,orthomatrix,sparse_options,all_radial,ncen,useall,verbose,dummy):
 
 
     # Get number of features
@@ -91,7 +91,7 @@ def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,
         for i in range(npoints):
 
             # compute the first kind of orthogonal projections from the SOAP density 
-            [omega1,harmonic1,orthoradint1] = initsoap.initsoap(nat[i],nnmax,nspecies,lmax,centers,all_species,nneighmax[i],atom_indexes[i],rc,coords[i],cell[i].T,all_radial,sigma,sg,nmax,orthomatrix)
+            [omega1,harmonic1,orthoradint1] = initsoap.initsoap(nat[i],nnmax,nspecies,lmax,centers,all_species,nneighmax[i],atom_indexes[i],rc,coords[i],cell[i].T,all_radial,sigma,sg,nmax,orthomatrix,dummy)
 
 
             omega2 = omega1.copy()
@@ -156,7 +156,7 @@ def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,
         for i in range(npoints):
 
             # compute the first kind of orthogonal projections from the SOAP density 
-            [omega1,harmonic1,orthoradint1] = initsoap.initsoap(nat[i],nnmax,nspecies,lmax,centers,all_species,nneighmax[i],atom_indexes[i],rc,coords[i],cell[i].T,all_radial,sigma,sg,nmax,orthomatrix)
+            [omega1,harmonic1,orthoradint1] = initsoap.initsoap(nat[i],nnmax,nspecies,lmax,centers,all_species,nneighmax[i],atom_indexes[i],rc,coords[i],cell[i].T,all_radial,sigma,sg,nmax,orthomatrix,dummy)
 
 
             omega2 = omega1.copy()
@@ -179,17 +179,18 @@ def compute_power_spectrum(nat,nneighmax,natmax,lam,lmax,npoints,nspecies,nnmax,
                             for mu in range(2*lam+1):
                                 if abs(im-lval-mu+lam) <= lval2:
                                     harmconj[:,:,lval2,lval,im,mu,:] = np.conj(harmonic1[:,:,lval2,lval2+im-lval-mu+lam,:])
-                for iat in range(ncen[i]):
-                    for ispe in range(nspecies): 
-                        omegaconj[iat,ispe] = np.einsum('lnh,lkmvh->vnklm',orthoradint1[iat,ispe],harmconj[iat,ispe])
-        
+#                for iat in range(ncen[i]):
+#                    for ispe in range(nspecies): 
+#                        omegaconj[iat,ispe] = np.einsum('lnh,lkmvh->vnklm',orthoradint1[iat,ispe],harmconj[iat,ispe])
+                omegaconj = np.einsum('ijlnh,ijlkmvh->ijvnklm',orthoradint1,harmconj,optimize='optimal')
 
                 power = np.zeros((nat[i],2*lam+1,nspecies,nspecies,nmax,nmax,lmax+1,lmax+1),complex)
                 p2 = np.zeros((nat[i],2*lam+1,nspecies,nspecies,nmax,nmax,llmax),complex)
-                for iat in range(ncen[i]):
-                    for ia in range(nspecies):
-                        for ib in range(nspecies):
-                            power[iat,:,ia,ib] = np.einsum('nlv,xmlkv,xlkv->xnmlk',omega2[iat,ia],omegaconj[iat,ib],w3j)
+#                for iat in range(ncen[i]):
+#                    for ia in range(nspecies):
+#                        for ib in range(nspecies):
+#                            power[iat,:,ia,ib] = np.einsum('nlv,xmlkv,xlkv->xnmlk',omega2[iat,ia],omegaconj[iat,ib],w3j)
+                power = np.einsum('ianlv,ibxmlkv,xlkv->ixabnmlk',omega2,omegaconj,w3j,optimize='optimal')
 
                 for l in range(llmax):
                     p2[:,:,:,:,:,:,l] = power[:,:,:,:,:,:,lvalues[l][0],lvalues[l][1]]

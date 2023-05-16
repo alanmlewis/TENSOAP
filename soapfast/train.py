@@ -184,7 +184,7 @@ def main():
                     pred.append(np.dot(kte[i],wts[4]))
                     if (degen[i]==1):
                         pred[-1] += meantrain[i]
-                    
+
                     predi = pred[i].reshape(len(test_set),degen[i])
                     comparison = pte[i].reshape(len(test_set),degen[i])
 
