@@ -56,6 +56,7 @@ def main():
             # If we wanted to do the predictions, then put together the predicted spherical tensors
             if (prediction):
                 ns = int(len(outvec[0])/degen[0])
+                ntr = int(len(ptr[0])/degen[0])
                 predcart  = regression_utils.convert_spherical_to_cartesian(outvec,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list)
                 testcart  = regression_utils.convert_spherical_to_cartesian(tstvec,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list)
     
@@ -224,7 +225,7 @@ def main():
                 corrfile.close()
 
 
-            trcart = regression_utils.convert_spherical_to_cartesian(ptr ,degen,ns,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list).reshape((len(ptr[0]),-1))
+            trcart = regression_utils.convert_spherical_to_cartesian(ptr ,degen,ntr,CR,CS,keep_cols,keep_list,lin_dep_list,sym_list).reshape((len(ptr[0]),-1))
             intrins_dev = np.std(trcart,axis=0)
             abs_error = np.sqrt(np.average(np.square(predcart-testcart).reshape((ns,-1)),axis=0))
          
