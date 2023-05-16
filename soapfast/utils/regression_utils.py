@@ -35,6 +35,12 @@ def print_results(intrins_dev,abs_error,degen,cart=False):
 def shuffle_data(ndata,sel,rdm,fractrain):
     # Populate arrays for training and testing set
 
+    if (sel == [0,-1]) or (sel == [0,0]):
+        sel = [0,ndata]
+
+    if (len(sel)==1):
+        sel = ['file',np.load(sel[0])]
+
     if rdm == 0:
         if (sel[0] != 'file'):
             if (sel[1] == -1):

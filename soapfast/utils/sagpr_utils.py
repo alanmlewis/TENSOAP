@@ -56,12 +56,6 @@ def do_sagpr_spherical(kernel,tens,reg,rank_str='',nat=[],fractrain=1.0,rdm=0,se
     if (nat == []):
         nat = [1 for i in range(len(tens))]
 
-    if (sel == [0,-1]) or (sel == [0,0]):
-        sel = [0,len(tens)]
-
-    if (len(sel)==1):
-        sel = ['file',np.load(sel[0])]
-
     # Get a list of members of the training and testing sets
     ndata = len(tens)
     [ns,nt,ntmax,trrange,terange] = shuffle_data(ndata,sel,rdm,fractrain)
