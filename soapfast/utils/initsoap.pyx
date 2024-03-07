@@ -210,7 +210,7 @@ cdef void _initsoapperiodic(long nspecies,
                                     # within cutoff ?
                                     if r2 <= rcut**2:
                                         if n > nnmax:
-                                            print "The number of nearest neighbours exceeds the estimated maximum. Please reduce the value of the flag vol_frac when calling get_power_spectrum."
+                                            print("The number of nearest neighbours exceeds the estimated maximum. Please reduce the value of the flag vol_frac when calling get_power_spectrum.")
                                             sys.exit()
                                         # central atom ?
                                         if neigh == cen and ia==0 and ib==0 and ic==0:
