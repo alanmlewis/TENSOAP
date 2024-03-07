@@ -8,15 +8,15 @@ ext_modules = [
         "initsoap",
         ["initsoap.pyx"],
         libraries=["m"],
-        extra_compile_args=['-fopenmp'],
-        extra_link_args=['-fopenmp'],
+#        extra_compile_args=['-fopenmp'],
+#        extra_link_args=['-fopenmp'],
     ),
         Extension(
         "build_kernel",
         ["build_kernel.pyx"],
         libraries=["m"],
-        extra_compile_args=['-fopenmp'],
-        extra_link_args=['-fopenmp'],
+#        extra_compile_args=['-fopenmp'],
+#        extra_link_args=['-fopenmp'],
     )
 ]
 
