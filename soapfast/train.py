@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from utils import parsing,regression_utils,sagpr_utils
 import scipy.linalg
